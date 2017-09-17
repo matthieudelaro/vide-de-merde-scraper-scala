@@ -27,12 +27,7 @@ The API is described later in the README.
 ### Tests
 Tests have been implemented in PostControllerSpec. They can be run with:
 ```$xslt
-    # TODO: mocking the PostRepository to load directly from database_posts_mock.json would be much better
-    mv database_posts.json database_posts.save.json
-    cp test/database_posts_mock.json database_posts.json
-    sbt test
-    rm database_posts.json
-    mv database_posts.save.json database_posts.json
+    SCRALER_SHOULD_MOCK_DB='true' bash -c 'sbt test'
 ```
 This should output such result:
 ```$xslt
@@ -72,13 +67,13 @@ This should output such result:
 Previous usages can all be run in Docker, thanks to the following commands:
 ```$xslt
 # scrap:
-docker run -it --rm --workdir=/root/.ivy2 --volume=/path/to/this/repository:/root/.ivy2 --env="TZ=UTC-02:00" --publish="9000:9000" ysihaoy/scala-play:2.12.3-2.6.2-sbt-0.13.15 sh -c 'sbt "run-main Scraper"'
+docker run -it --rm --workdir=/root/.ivy2 --volume=/path/to/this/repository:/root/.ivy2 --publish="9000:9000" ysihaoy/scala-play:2.12.3-2.6.2-sbt-0.13.15 sh -c 'sbt "run-main Scraper"'
 
 # run:
-docker run -it --rm --workdir=/root/.ivy2 --volume=/path/to/this/repository:/root/.ivy2 --env="TZ=UTC-02:00" --publish="9000:9000" ysihaoy/scala-play:2.12.3-2.6.2-sbt-0.13.15 sh -c "sbt run"
+docker run -it --rm --workdir=/root/.ivy2 --volume=/path/to/this/repository:/root/.ivy2 --publish="9000:9000" ysihaoy/scala-play:2.12.3-2.6.2-sbt-0.13.15 sh -c "sbt run"
 
 # test:
-docker run -it --rm --workdir=/root/.ivy2 --volume=/path/to/this/repository:/root/.ivy2 --env="TZ=UTC-02:00" --publish="9000:9000" ysihaoy/scala-play:2.12.3-2.6.2-sbt-0.13.15 sh -c 'mv database_posts.json database_posts.save.json; cp test/database_posts_mock.json database_posts.json; sbt test; rm database_posts.json; mv database_posts.save.json database_posts.json'
+docker run -it --rm --workdir=/root/.ivy2 --volume=/path/to/this/repository:/root/.ivy2 --env="SCRALER_SHOULD_MOCK_DB=true" ysihaoy/scala-play:2.12.3-2.6.2-sbt-0.13.15 sh -c "sbt test"
 ```
 
 But wait, there's an easier way than running those long commands. [Nut](https://github.com/matthieudelaro/nut)
@@ -87,7 +82,7 @@ has been designed with this use-case in mind:
 # 1) Install Nut : 
 #   Methods: NPM / download binaries / compile from source in a container
 #   See https://github.com/matthieudelaro/nut#getting-nut 
-# 2) Call Nut:
+# 2) Call Nut from the command line in /path/to/this/repository/ :
     nut scrap
     nut run
     nut test

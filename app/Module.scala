@@ -15,6 +15,11 @@ class Module(environment: Environment, configuration: Configuration)
     with ScalaModule {
 
   override def configure() = {
-    bind[PostRepository].to[PostRepositoryImpl].in[Singleton]
+    // depending on configuration described in application.conf, use a mock for PostRepository to run tests
+    if (configuration.underlying.getString("mock.mockDB") == "true") {
+      bind[PostRepository].to[PostRepositoryMock].in[Singleton]
+    } else {
+      bind[PostRepository].to[PostRepositoryImpl].in[Singleton]
+    }
   }
 }

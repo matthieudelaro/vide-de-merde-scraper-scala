@@ -12,6 +12,8 @@ import play.test.{WithApplication, WithServer}
 
 class PostControllerSpec extends PlaySpec with GuiceOneAppPerTest {
 
+  // TODO: do dependency injection of PostRepositoryMock here, instead of relying on environment variables in application.conf and in Module.scala
+
   "PostController" should {
 
     "return the list of all posts" in {

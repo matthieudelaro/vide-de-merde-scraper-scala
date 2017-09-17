@@ -9,6 +9,7 @@ import akka.actor.ActorSystem
 import net.ruippeixotog.scalascraper.browser.JsoupBrowser
 import net.ruippeixotog.scalascraper.dsl.DSL._
 import net.ruippeixotog.scalascraper.scraper.ContentExtractors.{element, elementList, text}
+import org.joda.time.DateTime
 import play.api.libs.concurrent.CustomExecutionContext
 import play.api.libs.json._
 import play.api.{Logger, MarkerContext}
@@ -183,10 +184,10 @@ class PostRepositoryImpl @Inject()()(implicit ec: PostExecutionContext) extends 
   // The scraper writes them into the file `storageName`, and the server loads them from this file
   // upon REST request, when postList is empty
   // TODO: implement a real database, instead of this simple JSON file
-  private var postList: List[PostData] = Nil
+  protected var postList: List[PostData] = Nil
 
-  private def loadPostsFromFileIfRequired(): Unit = {
-
+  protected def loadPostsFromFileIfRequired(): Unit = {
+    logger.trace("loadPostsFromFileIfRequired")
     if (postList.isEmpty) {
       val contents = Source.fromFile(PostRepositoryImpl.storageName).mkString
       val json = Json.parse(contents)
@@ -224,5 +225,38 @@ class PostRepositoryImpl @Inject()()(implicit ec: PostExecutionContext) extends 
 
   def fetch(): Unit = {
     postList = PostRepositoryImpl.fetch()
+  }
+}
+
+/**
+  * This mock while create its own list of posts, instead of reading them from the database file.
+  * This is handy to run tests.
+  * @param ec
+  */
+@Singleton
+class PostRepositoryMock @Inject()()(implicit ec: PostExecutionContext) extends PostRepositoryImpl {
+  private val logger = Logger(this.getClass)
+  override protected def loadPostsFromFileIfRequired(): Unit = {
+    logger.trace("loadPostsFromFileIfRequired")
+    if (postList.isEmpty) {
+      postList =
+        List(PostData("id123", "Dites-moi qui...",
+            new DateTime().withYear(2000)
+            .withMonthOfYear(1)
+            .withDayOfMonth(1).toDate, "Professeur Tournesol"),
+          PostData("id456", "je suis 1...",
+            new DateTime().withYear(2002)
+              .withMonthOfYear(1)
+              .withDayOfMonth(1).toDate, "Tintin"),
+          PostData("id789", "je suis 2 ...",
+            new DateTime().withYear(2004)
+              .withMonthOfYear(1)
+              .withDayOfMonth(1).toDate, "Captain"),
+          PostData("id10", "je suis 3 ...",
+            new DateTime().withYear(2006)
+              .withMonthOfYear(1)
+              .withDayOfMonth(1).toDate, "Dupond et Dupont")
+        )
+    }
   }
 }
