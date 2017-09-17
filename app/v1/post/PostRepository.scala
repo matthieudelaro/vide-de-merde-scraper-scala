@@ -1,6 +1,8 @@
 package v1.post
 
-import java.util.Locale
+import java.time.format.DateTimeFormatter
+import java.time.LocalDate
+import java.util.{Date, Locale}
 import javax.inject.{Inject, Singleton}
 
 import akka.actor.ActorSystem
@@ -21,13 +23,12 @@ final case class PostData(id: String, content: String, date: java.util.Date, aut
 }
 
 object PostData {
-  val outputFormat = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")
+  val outputFormat = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.FRENCH)
 
   /**
     * Mapping to write a PostData out as a JSON value.
     */
   implicit val implicitWrites = new Format[PostData] {
-//    implicit val implicitWrites = new Writes[PostData] {
     def writes(post: PostData): JsValue = {
       Json.obj(
         "id" -> post.id,
@@ -60,7 +61,6 @@ trait PostRepository {
   def fetch()
 }
 
-
 object PostRepositoryImpl {
   private val logger = Logger(this.getClass)
   val storageName = "./database_posts.json"
@@ -69,24 +69,20 @@ object PostRepositoryImpl {
   private val anonymousAuthorAndDatePattern = "Par / (.+)".r
   private val patternIDinURL = ".*_([0-9]+).html".r
 
-  private val inputFormat = new java.text.SimpleDateFormat("EEEE d MMMM yyyy HH:mm", Locale.FRENCH)
+  // SimpleDateFormat is not ThreadSafe => using DateTimeFormatter instead:
+  val inputFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("EEEE d MMMM yyyy HH:mm", Locale.FRENCH)
   def fetch(): List[PostData] = {
     logger.trace("Fetching posts... (This may take a while)")
 
     // @param: (post url, authorAndDate, content)
     def parseArticle(data: (String, String, String)) : PostData = {
-      var author, timeString : String = ""
-      data._2 match {
-        case authorAndDatePattern(name, time) =>
-          author = name
-          timeString = time
-        case anonymousAuthorAndDatePattern(time) =>
-          author = "Anonymous"
-          timeString = time
-      }
       val patternIDinURL(idFromUrl) = data._1 // parse URL into idFromUrl
-      // PostData(id: String, content: String, date: java.util.Date, author: String)
-      new PostData(idFromUrl, data._3, inputFormat.parse(timeString), author)
+        data._2 match {
+          case authorAndDatePattern(name, time) =>
+            new PostData(idFromUrl, data._3, java.sql.Date.valueOf(LocalDate.parse(time, inputFormat)), name)
+          case anonymousAuthorAndDatePattern(time) =>
+            new PostData(idFromUrl, data._3, java.sql.Date.valueOf(LocalDate.parse(time, inputFormat)), "Anonymous")
+        }
     }
 
     var posts: List[PostData] = Nil // url, id, PostData
@@ -94,22 +90,22 @@ object PostRepositoryImpl {
     // (if this is a real post (not a "best of", etc))
     var nextPage = 1
     val desiredQuantity = 200
+    val pagesPerTry = 7
 
     val browser = JsoupBrowser()
 
-    // TODO: load articles asynchronously,
-    // See getPlayerScores from https://nordicapis.com/building-rest-api-java-scala-using-play-framework-part-2/
     while (posts.length < desiredQuantity) {
       // get a page with a list of articles
-      logger.trace(s"Getting page $nextPage...")
-      val doc = browser.get("http://www.viedemerde.fr/news?page=" + nextPage)
-      nextPage += 1
+      logger.trace(s"Getting $pagesPerTry pages, starting from page $nextPage...")
+      val docs = (nextPage to (nextPage+pagesPerTry)).par // process in parallel
+        .map(i => browser.get("http://www.viedemerde.fr/news?page=" + i))
+      nextPage += pagesPerTry
 
       // get the items and urls of articles that we did not fetch yet
-      // TODO: use for {} yield () structure instead of what follows
-      val infiniteScroll = doc >> elementList(".infinite-scroll figure > a")
-      var itemUrl = infiniteScroll
-        .map(i => i.attr("href"))
+      // TODO: using for {} yield () structure (instead of what follows) would look nicer
+      val infiniteScroll = docs.map(doc => doc >> elementList(".infinite-scroll figure > a"))
+      val itemUrl = infiniteScroll
+        .flatMap(listofElements => listofElements.map(i => i.attr("href")))
         .filter(url => !parsedUrls.contains(url))
 
       // ignore extra URL (to avoid fetching more than the desiredQuantity)
@@ -120,46 +116,47 @@ object PostRepositoryImpl {
       val items = itemUrl.map(url => (
         url,
         browser.get("http://www.viedemerde.fr" + url) >> element(".art-panel")
-      )
-      )
+      ))
 
-      logger.trace(s"Retrieved data from " + items.size + " articles")
+      logger.trace(s"Retrieved data from " + items.size + " posts")
       // retrieve useful data from each article
       val data = items.map{ item => // item = (url, html)
         var authorDate : Option[String] = None
         var content : Option[String] = None
+        var header : Option[String] = None
+        var title : Option[String] = None
         try {
           authorDate = Some(item._2 >> text("div:eq(0) > div:eq(0) > div:eq(2)"))
-          //          logger.trace(authorDate.toString() + " => getting content...")
+          title = Some(item._2 >> text("h2"))
+          header = Some(item._2 >> text(".chapo"))
           content = Some(item._2 >> text("div:eq(0) > div:eq(2) > div:eq(0) > div:eq(0)"))
-          //          logger.trace(authorDate.toString() + " => got content")
         } catch {
-          case ex: NoSuchElementException => { // recalling the best post of the week, etc => not real posts
-            logger.trace(s"NoSuchElementException: Could not parse given article: " + item._1)
-            logger.trace(ex.getStackTrace().toString())
+          case ex: NoSuchElementException => {
+            // => best post of the week, etc => There is no content, but still, there is a title and a header
           }
 
           case ex: Exception => {
-            logger.trace(s"Could not parse given article: ")
-            logger.trace(ex.getStackTrace().toString())
+            logger.trace(s"Exception: Could not parse given post: " + item._1
+              + "\n\t" + ex.getStackTrace.mkString("\n\t"))
           }
         }
-        (item._1, authorDate, content) // url, author and date, content
-        // TODO: improve content retrieval. Eg: include text from links
+        val wholeContent: String = List(title.getOrElse(""), header.getOrElse(""), content.getOrElse("")).mkString("")
+        (item._1, authorDate, wholeContent) // url, author and date, content
+        // TODO: improve content retrieval again. Eg: include text from links
       }.filter(
-        i => i._2.isDefined && i._3.isDefined // ignore ~"best post of the week", etc
+        i => i._2.isDefined // ignore ~"best post of the week", etc
       )
-        .map( i => (i._1, i._2.get, i._3.get))
+        .map( i => (i._1, i._2.get, i._3))
 
-
-      logger.trace(s"Extracted content author date from " + data.size + " articles")
+      logger.trace(s"Extracted content author date from " + data.size + " posts")
       posts = posts ++ data.map(i => parseArticle(i))  // i : (post url, authorAndDate, content)
-        .dropRight(math.max(data.size + posts.length - desiredQuantity, 0))
       logger.trace(s"Parsed articles")
       parsedUrls = parsedUrls ++ itemUrl
-      logger.trace(s"There are " + posts.length + " articles")
+      logger.trace(s"There are " + posts.length + " posts")
     }
 
+    posts = posts.dropRight(math.max(posts.length - desiredQuantity, 0))
+    logger.trace(s"Reduced to " + posts.length + " posts")
     // Write articles in the database
     // TODO: implement a real database, instead of this simple JSON file
     import java.io._
