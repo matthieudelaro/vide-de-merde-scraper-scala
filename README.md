@@ -1,6 +1,6 @@
 # "Vie de Merde" Scraper
 
-This is a Scala/Play project, which parses posts from [Vide de Merde (VDM)](www.viedemerde.fr/news?page=1),
+This is a Scala/Play project, which parses posts from [Vie de Merde (VDM)](www.viedemerde.fr/news?page=1),
 and serves them with a REST API.
 
 Note: There is an API to retrieve VDM posts. It would have been much easier and cleaner to use it.
@@ -98,20 +98,44 @@ You may even run SBT interactive mode in a container with `nut cli`.
 ## API
 
 ### GET /api/posts:
+Returns a list of posts. Example:
+```Json
+{
+  "posts": [
+    {
+      "id": "242095",
+      "content": "Dites-moi qui est ce grand tableau noir ? Ringo pourrait presque sortir de sa retraite et faire une nouvelle version de sa chanson, (heureusement) tombée dans les oubliettes du bon goût, pour soutenir ces six professeurs du collège Albert Camus de Gaillac, ainsi que les parents d'élèves qui se sont joints à eux pour sauver des tableaux noirs condamnés à la déchetterie. Pourquoi la police s'est elle intéressée à ce cas, et pourquoi une telle VDM ? Apprenant que les tableaux de leur collège allaient être remplacés par des tableaux blancs interactifs, ils ont voulu les protéger, à l'instar de certains archéologues tels qu'Indiana Jones, en les déplaçant dans un garage proche de l'école… mais sans l'accord de l'adminstration du collège. Erreur de débutant. Quand ils sont revenus chercher leur butin scolaire, ils ont été accueillis par une douzaine de policiers. C'est un peu excessif, non ? Un peu, sauf qu'il s'avère qu'il ne s'agissait pas que de tableaux, mais de mobilier en général, et le rectorat n'entend pas tout ça de la même façon. La caution nostalgie des tableaux leur paraissant suspecte, le rectorat invoque également la prise d'autres éléments comme des \"écrans, des chaises, des tables, des étagères…\" Il est question donc d'une intrusion, car le bâtiment était fermé à clé, chose qui a été formellement démentie par les professeurs. Solidarité Une pétition de soutien envers les enseignants a recueilli déjà plus de 8000 signatures. De notre côté, on espère qu'ils recevront au moins 4 heures de colle et un devoir à la maison.",
+      "date": "2017-09-13T09:30:00Z",
+      "author": "Professeur Tournesol"
+    }
+  ],
+  "count": 1
+}
+```
+
+
 Optional parameters:
 - from  
 - to
 - author
 
-Example: 
+Examples: 
 - /api/posts
 - /api/posts/api/posts?from=2017-01-01T00:00:00Z&to=2017-12-31T00:00:00Z
 - /api/posts?author=Genius
 
-Returns a list of posts.
-
 #### GET /api/posts/<ID>
-Returns the desired post.
+Returns the desired post. For example:
+```Json
+{
+  "post": {
+    "id": "242095",
+    "content": "Dites-moi qui est ce grand tableau noir ? Ringo pourrait presque sortir de sa retraite et faire une nouvelle version de sa chanson, (heureusement) tombée dans les oubliettes du bon goût, pour soutenir ces six professeurs du collège Albert Camus de Gaillac, ainsi que les parents d'élèves qui se sont joints à eux pour sauver des tableaux noirs condamnés à la déchetterie. Pourquoi la police s'est elle intéressée à ce cas, et pourquoi une telle VDM ? Apprenant que les tableaux de leur collège allaient être remplacés par des tableaux blancs interactifs, ils ont voulu les protéger, à l'instar de certains archéologues tels qu'Indiana Jones, en les déplaçant dans un garage proche de l'école… mais sans l'accord de l'adminstration du collège. Erreur de débutant. Quand ils sont revenus chercher leur butin scolaire, ils ont été accueillis par une douzaine de policiers. C'est un peu excessif, non ? Un peu, sauf qu'il s'avère qu'il ne s'agissait pas que de tableaux, mais de mobilier en général, et le rectorat n'entend pas tout ça de la même façon. La caution nostalgie des tableaux leur paraissant suspecte, le rectorat invoque également la prise d'autres éléments comme des \"écrans, des chaises, des tables, des étagères…\" Il est question donc d'une intrusion, car le bâtiment était fermé à clé, chose qui a été formellement démentie par les professeurs. Solidarité Une pétition de soutien envers les enseignants a recueilli déjà plus de 8000 signatures. De notre côté, on espère qu'ils recevront au moins 4 heures de colle et un devoir à la maison.",
+    "date": "2017-09-13T09:30:00Z",
+    "author": "Professeur Tournesol"
+  }
+}
+```
 
 ## Limitations / Features
 Currently, some posts such as the following [Best of The Week](www.viedemerde.fr/article/et-la-vdm-qui-vous-a-fait-le-plus-rire-cette-semaine-est_234026.html)

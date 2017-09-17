@@ -21,7 +21,7 @@ final case class PostData(id: String, content: String, date: java.util.Date, aut
 }
 
 object PostData {
-  val outputFormat = new java.text.SimpleDateFormat("yyyy-mm-dd'T'HH:mm:ss'Z'")
+  val outputFormat = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")
 
   /**
     * Mapping to write a PostData out as a JSON value.
