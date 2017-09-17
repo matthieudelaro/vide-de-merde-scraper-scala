@@ -1,0 +1,26 @@
+[
+    {
+      "id": "id123",
+      "content": "Dites-moi qui...",
+      "date": "2000-27-01T06:27:08Z",
+      "author": "Professeur Tournesol"
+    },
+    {
+      "id": "id456",
+      "content": "je suis 1...",
+      "date": "2002-27-01T06:27:08Z",
+      "author": "Tintin"
+    },
+    {
+      "id": "id789",
+      "content": "je suis 2 ...",
+      "date": "2004-27-01T06:27:08Z",
+      "author": "Captain"
+    },
+    {
+      "id": "id10",
+      "content": "je suis 3 ...",
+      "date": "2006-27-01T06:27:08Z",
+      "author": "Dupond et Dupont"
+    }
+]

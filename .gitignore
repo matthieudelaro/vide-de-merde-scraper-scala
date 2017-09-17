@@ -11,3 +11,4 @@ target
 /.sbt.cache.lock
 /.sbt.ivy.lock
 /.vscode
+/conf/generated.keystore

@@ -1,0 +1,5 @@
+GET        /api/posts/                 v1.post.PostController.list(author: Option[String], from: Option[String], to: Option[String])
+GET        /api/posts/:postid/         v1.post.PostController.show(postid)
+
+# handy yet undesired route:
+# GET        /fetch                      v1.post.PostController.fetch
