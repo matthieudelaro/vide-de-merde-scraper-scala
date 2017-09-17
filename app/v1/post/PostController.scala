@@ -7,6 +7,7 @@ import play.api.libs.json.Json
 import play.api.mvc._
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
 
 case class PostFormInput(title: String, body: String)
 
@@ -26,14 +27,18 @@ class PostController @Inject()(cc: PostControllerComponents)(implicit ec: Execut
   }
 
   def show(id: String): Action[AnyContent] = PostAction.async { implicit request =>
-    postResourceHandler.lookup(id).map { post =>
-      Ok(Json.obj("post" -> post))
-    }
-//    // TODO: 404
-//    NotFound()
+
+    postResourceHandler.lookup(id)
+      .map{ post =>
+        if (post.isEmpty) {
+          NotFound(Json.obj("post" -> post))
+        } else {
+          Ok(Json.obj("post" -> post))
+        }
+      }
   }
 
-  // TODO : remove ? 'cause not asked
+  // TODO : remove ? Because this feature is not desired
   def fetch = Action {
     postResourceHandler.fetch
     Ok("Fetching... This may take a while...")
