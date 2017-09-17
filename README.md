@@ -136,8 +136,3 @@ Returns the desired post. For example:
   }
 }
 ```
-
-## Limitations / Features
-Currently, some posts such as the following [Best of The Week](www.viedemerde.fr/article/et-la-vdm-qui-vous-a-fait-le-plus-rire-cette-semaine-est_234026.html)
-are ignored while scraping the website. Reasons for this choice is that they refer previous posts, 
-which implies duplicate information in the database.
