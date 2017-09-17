@@ -1,0 +1,28 @@
+syntax_version: "7"
+project_name: VDM-scraper-REST-API
+docker_image: ysihaoy/scala-play:2.12.3-2.6.2-sbt-0.13.15  # sbt : 0.13.11  , scala: 2.11.7 =>  2.11.7-2.6.2-sbt-0.13.11
+work_in_project_folder_as: /root/.ivy2 # so that /root/.ivy2/cache (used by sbt) will persist
+ports: # open ports
+  - 9000:9000
+
+macros:
+  run:
+    usage: run the server, auto-reloading enabled
+    actions:
+    - sbt run
+  scrap:
+    usage: scrap data from VDM
+    actions:
+    - sbt "run-main Scraper"
+  test:
+    usage: run tests
+    actions: # TODO: mocking the PostRepository to load directly from database_posts_mock.json would be much better
+    - mv database_posts.json database_posts.save.json
+    - cp test/database_posts_mock.json database_posts.json
+    - sbt test
+    - rm database_posts.json
+    - mv database_posts.save.json database_posts.json
+  cli:
+    usage: start sbt in interactive mode. Enables the user to run several sbt commands one after another.
+    actions:
+    - sbt
