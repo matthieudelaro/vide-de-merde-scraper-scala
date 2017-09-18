@@ -1,15 +1,14 @@
 package v1.post
 
+import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import java.time.LocalDate
-import java.util.{Date, Locale}
+import java.util.Locale
 import javax.inject.{Inject, Singleton}
 
 import akka.actor.ActorSystem
 import net.ruippeixotog.scalascraper.browser.JsoupBrowser
 import net.ruippeixotog.scalascraper.dsl.DSL._
 import net.ruippeixotog.scalascraper.scraper.ContentExtractors.{element, elementList, text}
-import org.joda.time.DateTime
 import play.api.libs.concurrent.CustomExecutionContext
 import play.api.libs.json._
 import play.api.{Logger, MarkerContext}
@@ -17,14 +16,14 @@ import play.api.{Logger, MarkerContext}
 import scala.concurrent.Future
 import scala.io.Source
 
-final case class PostData(id: String, content: String, date: java.util.Date, author: String) {
+final case class PostData(id: String, content: String, date: LocalDateTime, author: String) {
   def getDateAsString() : String =  {
-    return PostData.outputFormat.format(date)
+    return date.format(PostData.outputFormat)
   }
 }
 
 object PostData {
-  val outputFormat = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.FRENCH)
+  val outputFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.FRENCH)
 
   /**
     * Mapping to write a PostData out as a JSON value.
@@ -42,7 +41,7 @@ object PostData {
     def reads(json: JsValue):JsResult[PostData] = JsSuccess(PostData.this(
       (json \ "id").as[String],
       (json \ "content").as[String],
-      outputFormat.parse((json \ "date").as[String]),
+      LocalDateTime.parse((json \ "date").as[String], PostData.outputFormat),
       (json \ "author").as[String]
     ))
   }
@@ -70,8 +69,8 @@ object PostRepositoryImpl {
   private val anonymousAuthorAndDatePattern = "Par / (.+)".r
   private val patternIDinURL = ".*_([0-9]+).html".r
 
-  // SimpleDateFormat is not ThreadSafe => using DateTimeFormatter instead:
   val inputFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("EEEE d MMMM yyyy HH:mm", Locale.FRENCH)
+  // TODO: ? handle time zone ?
   def fetch(): List[PostData] = {
     logger.trace("Fetching posts... (This may take a while)")
 
@@ -80,18 +79,18 @@ object PostRepositoryImpl {
       val patternIDinURL(idFromUrl) = data._1 // parse URL into idFromUrl
         data._2 match {
           case authorAndDatePattern(name, time) =>
-            new PostData(idFromUrl, data._3, java.sql.Date.valueOf(LocalDate.parse(time, inputFormat)), name)
+            new PostData(idFromUrl, data._3, LocalDateTime.parse(time, inputFormat), name)
           case anonymousAuthorAndDatePattern(time) =>
-            new PostData(idFromUrl, data._3, java.sql.Date.valueOf(LocalDate.parse(time, inputFormat)), "Anonymous")
+            new PostData(idFromUrl, data._3, LocalDateTime.parse(time, inputFormat), "")
+          // TODO: "Anonymous" or "" ?
         }
     }
 
     var posts: List[PostData] = Nil // url, id, PostData
     var parsedUrls: List[String] = Nil
-    // (if this is a real post (not a "best of", etc))
     var nextPage = 1
     val desiredQuantity = 200
-    val pagesPerTry = 7
+    val pagesPerTry = 6
 
     val browser = JsoupBrowser()
 
@@ -111,7 +110,7 @@ object PostRepositoryImpl {
 
       // ignore extra URL (to avoid fetching more than the desiredQuantity)
       // itemUrl = itemUrl.dropRight(math.max(itemUrl.length + posts.length - desiredQuantity, 0))
-      // actually, articles in some URL are invalid (eg: "best of the week"), so parse them all, and drop later
+      // actually, articles in some URL may be invalid (eg: "best of the week"), so parse them all, and drop later
 
       // retrieve the page of each article
       val items = itemUrl.map(url => (
@@ -201,12 +200,12 @@ class PostRepositoryImpl @Inject()()(implicit ec: PostExecutionContext) extends 
       loadPostsFromFileIfRequired()
       var res = postList
       if (from.isDefined) {
-        val dateFrom = PostData.outputFormat.parse(from.get)
-        res = res.filter(p => p.date.after(dateFrom))
+        val dateFrom = LocalDateTime.parse(from.get, PostData.outputFormat)
+        res = res.filter(p => p.date.isAfter(dateFrom))
       }
       if (to.isDefined) {
-        val dateTo = PostData.outputFormat.parse(to.get)
-        res = res.filter(p => dateTo.after(p.date))
+        val dateTo = LocalDateTime.parse(to.get, PostData.outputFormat)
+        res = res.filter(p => dateTo.isAfter(p.date))
       }
       if (author.isDefined) {
         res = res.filter(p => author.get == p.author)
@@ -241,22 +240,15 @@ class PostRepositoryMock @Inject()()(implicit ec: PostExecutionContext) extends 
     if (postList.isEmpty) {
       postList =
         List(PostData("id123", "Dites-moi qui...",
-            new DateTime().withYear(2000)
-            .withMonthOfYear(1)
-            .withDayOfMonth(1).toDate, "Professeur Tournesol"),
+          LocalDateTime.of(2000, 1, 1, 0, 0), "Professeur Tournesol"),
           PostData("id456", "je suis 1...",
-            new DateTime().withYear(2002)
-              .withMonthOfYear(1)
-              .withDayOfMonth(1).toDate, "Tintin"),
+            LocalDateTime.of(2002, 1, 1, 0, 0), "Tintin"),
           PostData("id789", "je suis 2 ...",
-            new DateTime().withYear(2004)
-              .withMonthOfYear(1)
-              .withDayOfMonth(1).toDate, "Captain"),
+            LocalDateTime.of(2004, 1, 1, 0, 0), "Captain"),
           PostData("id10", "je suis 3 ...",
-            new DateTime().withYear(2006)
-              .withMonthOfYear(1)
-              .withDayOfMonth(1).toDate, "Dupond et Dupont")
+            LocalDateTime.of(2006, 1, 1, 0, 0), "Dupond et Dupont")
         )
+//        )
     }
   }
 }

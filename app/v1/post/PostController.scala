@@ -31,7 +31,7 @@ class PostController @Inject()(cc: PostControllerComponents)(implicit ec: Execut
     postResourceHandler.lookup(id)
       .map{ post =>
         if (post.isEmpty) {
-          NotFound(Json.obj("post" -> post))
+          NotFound("")
         } else {
           Ok(Json.obj("post" -> post))
         }
