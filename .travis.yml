@@ -1,0 +1,13 @@
+sudo: required
+
+services:
+  - docker
+
+before_install:
+- docker pull ysihaoy/scala-play:2.12.3-2.6.2-sbt-0.13.15
+
+script:
+# - bundle exec, make test
+- docker run -it --rm --workdir=/root/.ivy2 --volume=$PWD:/root/.ivy2 ysihaoy/scala-play:2.12.3-2.6.2-sbt-0.13.15 sh -c 'sbt "run-main Scraper"'
+- docker run -it --rm --workdir=/root/.ivy2 --volume=$PWD:/root/.ivy2 --env="SCRALER_SHOULD_MOCK_DB=true" ysihaoy/scala-play:2.12.3-2.6.2-sbt-0.13.15 sh -c "sbt test"
+

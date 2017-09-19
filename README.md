@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/matthieudelaro/vie-de-merde-scraper-scala.svg?branch=master)](https://travis-ci.org/matthieudelaro/vie-de-merde-scraper-scala)
+
 # "Vie de Merde" Scraper
 
 This is a Scala/Play project, which parses posts from [Vie de Merde (VDM)](www.viedemerde.fr/news?page=1),
@@ -11,18 +13,18 @@ This section will cover each usage in a dedicated section.
 The last subsection covers all usages at once, introducing Docker and Nut.
 
 ### Running the scraper
-The scraper can be run using the following command line: 
+The scraper can be run using the following command line:
 `sbt "run-main Scraper"`
 
 Note: It may also be run by querying `/fetch` address.
 To enable this extra feature, uncomment the last line of the file `conf/routes`:
 ```$xslt
 # GET        /fetch                      v1.post.PostController.fetch
-```  
+```
 
 ### Serving the API
 To start the server, run `sbt run`.
-The API is described later in the README. 
+The API is described later in the README.
 
 ### Tests
 Tests have been implemented in PostControllerSpec. They can be run with:
@@ -33,25 +35,25 @@ This should output such result:
 ```$xslt
 [info] PostControllerSpec:
 [info] PostController
-[trace] v.p.PostActionBuilder - invokeBlock: 
-[trace] v.p.PostRepositoryImpl - list: 
+[trace] v.p.PostActionBuilder - invokeBlock:
+[trace] v.p.PostRepositoryImpl - list:
 [info] - should return the list of all posts
-[trace] v.p.PostActionBuilder - invokeBlock: 
-[trace] v.p.PostRepositoryImpl - list: 
+[trace] v.p.PostActionBuilder - invokeBlock:
+[trace] v.p.PostRepositoryImpl - list:
 [info] - should return the list of posts selected by author
-[trace] v.p.PostActionBuilder - invokeBlock: 
-[trace] v.p.PostRepositoryImpl - list: 
+[trace] v.p.PostActionBuilder - invokeBlock:
+[trace] v.p.PostRepositoryImpl - list:
 [info] - should return the list of posts selected by from (date)
-[trace] v.p.PostActionBuilder - invokeBlock: 
-[trace] v.p.PostRepositoryImpl - list: 
+[trace] v.p.PostActionBuilder - invokeBlock:
+[trace] v.p.PostRepositoryImpl - list:
 [info] - should return the list of posts selected by to (date)
-[trace] v.p.PostActionBuilder - invokeBlock: 
-[trace] v.p.PostRepositoryImpl - list: 
+[trace] v.p.PostActionBuilder - invokeBlock:
+[trace] v.p.PostRepositoryImpl - list:
 [info] - should return the list of posts selected by from / to (date)
-[trace] v.p.PostActionBuilder - invokeBlock: 
-[trace] v.p.PostRepositoryImpl - list: 
+[trace] v.p.PostActionBuilder - invokeBlock:
+[trace] v.p.PostRepositoryImpl - list:
 [info] - should return the list of posts selected by author / from / to (date)
-[trace] v.p.PostActionBuilder - invokeBlock: 
+[trace] v.p.PostActionBuilder - invokeBlock:
 [trace] v.p.PostRepositoryImpl - get: id = id10
 [info] - should return the list of the requested index
 [info] ScalaTest
@@ -79,9 +81,9 @@ docker run -it --rm --workdir=/root/.ivy2 --volume=/path/to/this/repository:/roo
 But wait, there's an easier way than running those long commands. [Nut](https://github.com/matthieudelaro/nut)
 has been designed with this use-case in mind:
 ```$xslt
-# 1) Install Nut : 
+# 1) Install Nut :
 #   Methods: NPM / download binaries / compile from source in a container
-#   See https://github.com/matthieudelaro/nut#getting-nut 
+#   See https://github.com/matthieudelaro/nut#getting-nut
 # 2) Call Nut from the command line in /path/to/this/repository/ :
     nut scrap
     nut run
@@ -110,11 +112,11 @@ Returns a list of posts. Example:
 
 
 Optional parameters:
-- from  
+- from
 - to
 - author
 
-Examples: 
+Examples:
 - /api/posts
 - /api/posts/api/posts?from=2017-01-01T00:00:00Z&to=2017-12-31T00:00:00Z
 - /api/posts?author=Genius
